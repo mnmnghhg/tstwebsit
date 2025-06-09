@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="fa">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تورنمنت واژگان و گرامر انگلیسی</title>
+    <link href="https://unpkg.com/tailwindcss@^2/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Vazir', 'Arial', sans-serif;
+            direction: rtl;
+            background: linear-gradient(135deg, #4b5eaa, #1e3a8a);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+        @font-face {
+            font-family: 'Vazir';
+            src: url('https://cdn.fontcdn.ir/Font/Persian/Vazir/Vazir.woff') format('woff');
+        }
+        .card {
+            transform: translateY(20px);
+            opacity: 0;
+            animation: slideIn 0.5s ease forwards;
+        }
+        @keyframes slideIn {
+            to { transform: translateY(0); opacity: 1; }
+        }
+        .option-btn {
+            transition: all 0.3s ease;
+        }
+        .option-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+        .input-field {
+            border: 2px solid #e5e7eb;
+            border-radius: 0.5rem;
+            padding: 0.5rem;
+            margin-bottom: 1rem;
+            width: 100%;
+            text-align: right;
+        }
+        footer {
+            position: fixed;
+            bottom: 10px;
+            color: white;
+            text-align: center;
+            font-size: 0.9rem;
+            opacity: 0.8;
+        }
+    </style>
+</head>
+<body>
+    <div id="setupScreen" class="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-lg card">
+        <h1 class="text-3xl font-bold text-center text-indigo-600 mb-6">تورنمنت واژگان و گرامر انگلیسی</h1>
+        <p class="text-lg mb-4">تعداد بازیکنان (حداکثر 10 نفر):</p>
+        <input id="playerCount" type="number" min="2" max="10" value="2" class="input-field">
+        <div id="playerNames"></div>
+        <button id="startTournament" class="bg-indigo-500 text-white px-4 py-2 rounded-lg hover:bg-indigo-600">شروع تورنمنت</button>
+    </div>
+
+    <div id="gameScreen" class="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-lg card hidden">
+        <h1 class="text-2xl font-bold text-center text-indigo-600 mb-4" id="matchTitle"></h1>
+        <div id="gameArea" class="text-center">
+            <p class="text-lg mb-4 font-semibold" id="question"></p>
+            <div id="options" class="grid grid-cols-1 gap-4 mb-6"></div>
+            <p class="text-sm text-gray-600 mb-4">زمان باقی‌مانده: <span id="timer">6</span> ثانیه</p>
+            <p class="text-lg">امتیاز <span id="player1Name"></span>: <span id="player1Score">0</span></p>
+            <p class="text-lg">امتیاز <span id="player2Name"></span>: <span id="player2Score">0</span></p>
+            <p id="message" class="mt-4 text-green-600 font-semibold"></p>
+        </div>
+    </div>
+
+    <footer>توسعه‌دهنده: پارسا محمدی - etemad</footer>
+
+    <script>
+        const questions = [
+            // Vocabulary (Family and Friends 1-3)
+            { type: "vocab", question: "سگ", options: ["dog", "cat", "bird", "fish"], answer: "dog" },
+            { type: "vocab", question: "کتاب", options: ["book", "pen", "table", "chair"], answer: "book" },
+            { type: "vocab", question: "سلام", options: ["hello", "goodbye", "please", "thank you"], answer: "hello" },
+            { type: "vocab", question: "سیب", options: ["apple", "banana", "orange", "grape"], answer: "apple" },
+            { type: "vocab", question: "بزرگ", options: ["big", "small", "long", "short"], answer: "big" },
+            { type: "vocab", question: "دویدن", options: ["run", "walk", "sit", "stand"], answer: "run" },
+            { type: "vocab", question: "گربه", options: ["cat", "dog", "mouse", "bird"], answer: "cat" },
+            { type: "vocab", question: "صبح بخیر", options: ["good morning", "good night", "good afternoon", "good evening"], answer: "good morning" },
+            { type: "vocab", question: "مدرسه", options: ["school", "house", "park", "shop"], answer: "school" },
+            { type: "vocab", question: "خوشحال", options: ["happy", "sad", "angry", "tired"], answer: "happy" },
+            { type: "vocab", question: "قلم", options: ["pen", "pencil", "book", "bag"], answer: "pen" },
+            { type: "vocab", question: "خانه", options: ["house", "school", "car", "tree"], answer: "house" },
+            { type: "vocab", question: "موز", options: ["banana", "apple", "orange", "pear"], answer: "banana" },
+            { type: "vocab", question: "کوچک", options: ["small", "big", "tall", "short"], answer: "small" },
+            { type: "vocab", question: "خداحافظ", options: ["goodbye", "hello", "thank you", "please"], answer: "goodbye" },
+            { type: "vocab", question: "پرنده", options: ["bird", "fish", "cat", "dog"], answer: "bird" },
+            { type: "vocab", question: "میز", options: ["table", "chair", "bed", "door"], answer: "table" },
+            { type: "vocab", question: "تشکر", options: ["thank you", "please", "sorry", "hello"], answer: "thank you" },
+            { type: "vocab", question: "ماهی", options: ["fish", "bird", "cat", "mouse"], answer: "fish" },
+            { type: "vocab", question: "پارک", options: ["park", "school", "house", "shop"], answer: "park" },
+            { type: "vocab", question: "صندلی", options: ["chair", "table", "bed", "door"], answer: "chair" },
+            { type: "vocab", question: "ماشین", options: ["car", "bike", "bus", "train"], answer: "car" },
+            { type: "vocab", question: "توپ", options: ["ball", "doll", "kite", "toy"], answer: "ball" },
+            { type: "vocab", question: "پنجره", options: ["window", "door", "wall", "floor"], answer: "window" },
+            { type: "vocab", question: "درخت", options: ["tree", "flower", "grass", "plant"], answer: "tree" },
+            { type: "vocab", question: "آرام", options: ["quiet", "loud", "fast", "slow"], answer: "quiet" },
+            { type: "vocab", question: "بستنی", options: ["ice cream", "cake", "bread", "juice"], answer: "ice cream" },
+            { type: "vocab", question: "دوست", options: ["friend", "teacher", "mother", "father"], answer: "friend" },
+            { type: "vocab", question: "خوابیدن", options: ["sleep", "eat", "drink", "play"], answer: "sleep" },
+            { type: "vocab", question: "خورشید", options: ["sun", "moon", "star", "cloud"], answer: "sun" },
+            { type: "vocab", question: "ماه", options: ["moon", "sun", "star", "sky"], answer: "moon" },
+            { type: "vocab", question: "لباس", options: ["clothes", "shoes", "hat", "bag"], answer: "clothes" },
+            { type: "vocab", question: "شب بخیر", options: ["good night", "good morning", "good afternoon", "goodbye"], answer: "good night" },
+            { type: "vocab", question: "خانواده", options: ["family", "friends", "class", "team"], answer: "family" },
+            { type: "vocab", question: "غذا", options: ["food", "drink", "water", "juice"], answer: "food" },
+            { type: "vocab", question: "نوشیدن", options: ["drink", "eat", "sleep", "run"], answer: "drink" },
+            { type: "vocab", question: "اسباب‌بازی", options: ["toy", "ball", "doll", "kite"], answer: "toy" },
+            { type: "vocab", question: "باغ", options: ["garden", "park", "house", "school"], answer: "garden" },
+            { type: "vocab", question: "کفش", options: ["shoes", "hat", "clothes", "bag"], answer: "shoes" },
+            { type: "vocab", question: "آبی", options: ["blue", "red", "green", "yellow"], answer: "blue" },
+            // Grammar (Family and Friends 1-3) with meanings
+            { type: "grammar", question: "جمله درست کدام است؟", meaning: "من یک دانش‌آموز هستم", options: ["I is a student.", "I am a student.", "I are a student.", "I be a student."], answer: "I am a student." },
+            { type: "grammar", question: "جمله درست کدام است؟", meaning: "او بستنی دوست دارد", options: ["She like ice cream.", "She likes ice cream.", "She liking ice cream.", "She like’s ice cream."], answer: "She likes ice cream." },
+            { type: "grammar", question: "جمله درست کدام است؟", meaning: "ما خوشحال هستیم", options: ["We is happy.", "We are happy.", "We be happy.", "We am happy."], answer: "We are happy." },
+            { type: "grammar", question: "جمله درست کدام است؟", meaning: "او سریع می‌دود", options: ["He run fast.", "He runs fast.", "He running fast.", "He run’s fast."], answer: "He runs fast." },
+            { type: "grammar", question: "جمله درست کدام است؟", meaning: "این کتاب من است", options: ["This is my books.", "This is my book.", "This are my book.", "This be my book."], answer: "This is my book." },
+            { type: "grammar", question: "جمله درست کدام است؟", meaning: "آن‌ها فوتبال بازی می‌کنند", options: ["They plays football.", "They play football.", "They playing football.", "They is play football."], answer: "They play football." },
+            { type: "grammar", question: "جمله درست کدام است؟", meaning: "این یک گربه است", options: ["It is a cat.", "It are a cat.", "It be a cat.", "It is cat."], answer: "It is a cat." },
+            { type: "grammar", question: "جمله درست کدام است؟", meaning: "تو دوست من هستی", options: ["You is my friend.", "You are my friend.", "You be my friend.", "You am my friend."], answer: "You are my friend." },
+            { type: "grammar", question: "جمله درست کدام است؟", meaning: "من یک سگ دارم", options: ["I has a dog.", "I have a dog.", "I having a dog.", "I has dog."], answer: "I have a dog." },
+            { type: "grammar", question: "جمله درست کدام است؟", meaning: "او به مدرسه می‌رود", options: ["She go to school.", "She goes to school.", "She going to school.", "She gone to school."], answer: "She goes to school." },
+            { type: "grammar", question: "جمله درست کدام است؟", meaning: "ما یک اسباب‌بازی می‌خواهیم", options: ["We wants a toy.", "We want a toy.", "We wanting a toy.", "We wants toy."], answer: "We want a toy." },
+            { type: "grammar", question: "جمله درست کدام است؟", meaning: "او بازی کردن را دوست دارد", options: ["He like to play.", "He likes to play.", "He liking to play.", "He like’s to play."], answer: "He likes to play." },
+            { type: "grammar", question: "جمله درست کدام است؟", meaning: "این یک توپ است", options: ["This is a balls.", "This is a ball.", "This are a ball.", "This be a ball."], answer: "This is a ball." },
+            { type: "grammar", question: "جمله درست کدام است؟", meaning: "آن‌ها دو گربه دارند", options: ["They has two cats.", "They have two cats.", "They having two cats.", "They has cats."], answer: "They have two cats." },
+            { type: "grammar", question: "جمله درست کدام است؟", meaning: "من صبحانه می‌خورم", options: ["I eats breakfast.", "I eat breakfast.", "I eating breakfast.", "I eats breakfasts."], answer: "I eat breakfast." },
+            { type: "grammar", question: "جمله درست کدام است؟", meaning: "او در حال دویدن است", options: ["She is run.", "She is running.", "She run.", "She runs."], answer: "She is running." },
+            { type: "grammar", question: "جمله درست کدام است؟", meaning: "ما به پارک می‌رویم", options: ["We goes to park.", "We go to park.", "We going to park.", "We gone to park."], answer: "We go to park." },
+            { type: "grammar", question: "جمله درست کدام است؟", meaning: "این یک سگ است", options: ["It is a dogs.", "It is a dog.", "It are a dog.", "It be a dog."], answer: "It is a dog." },
+            { type: "grammar", question: "جمله درست کدام است؟", meaning: "تو خواندن را دوست داری", options: ["You likes to read.", "You like to read.", "You liking to read.", "You like’s to read."], answer: "You like to read." },
+            { type: "grammar", question: "جمله درست کدام است؟", meaning: "او برادر من است", options: ["He are my brother.", "He is my brother.", "He be my brother.", "He am my brother."], answer: "He is my brother." }
+        ];
+
+        let players = [];
+        let matches = [];
+        let currentMatch = null;
+        let currentQuestionIndex = 0;
+        let currentPlayerIndex = 0;
+        let timeLeft = 6;
+        let timerInterval;
+
+        const setupScreen = document.getElementById('setupScreen');
+        const gameScreen = document.getElementById('gameScreen');
+        const playerCountInput = document.getElementById('playerCount');
+        const playerNamesDiv = document.getElementById('playerNames');
+        const startTournamentBtn = document.getElementById('startTournament');
+        const matchTitle = document.getElementById('matchTitle');
+        const questionElement = document.getElementById('question');
+        const optionsElement = document.getElementById('options');
+        const timerElement = document.getElementById('timer');
+        const player1NameElement = document.getElementById('player1Name');
+        const player2NameElement = document.getElementById('player2Name');
+        const player1ScoreElement = document.getElementById('player1Score');
+        const player2ScoreElement = document.getElementById('player2Score');
+        const messageElement = document.getElementById('message');
+
+        function updatePlayerInputs() {
+            const count = Math.min(parseInt(playerCountInput.value) || 2, 10);
+            playerNamesDiv.innerHTML = '';
+            for (let i = 0; i < count; i++) {
+                const input = document.createElement('input');
+                input.type = 'text';
+                input.placeholder = `نام بازیکن ${i + 1}`;
+                input.className = 'input-field';
+                playerNamesDiv.appendChild(input);
+            }
+        }
+
+        function startTournament() {
+            const nameInputs = playerNamesDiv.querySelectorAll('input');
+            players = Array.from(nameInputs)
+                .map(input => input.value.trim())
+                .filter(name => name !== '');
+            if (players.length < 2) {
+                alert('حداقل 2 بازیکن وارد کنید!');
+                return;
+            }
+
+            matches = players.map((player, index) => ({ player, score: 0, id: index }));
+            setupScreen.classList.add('hidden');
+            gameScreen.classList.remove('hidden');
+            setupNextRound();
+        }
+
+        function setupNextRound() {
+            if (matches.length === 1) {
+                clearInterval(timerInterval);
+                questionElement.textContent = "تورنمنت تمام شد!";
+                optionsElement.innerHTML = '';
+                messageElement.textContent = `برنده نهایی: ${matches[0].player} با امتیاز ${matches[0].score}`;
+                return;
+            }
+
+            const roundMatches = [];
+            for (let i = 0; i < matches.length; i += 2) {
+                if (i + 1 < matches.length) {
+                    roundMatches.push([matches[i], matches[i + 1]]);
+                } else {
+                    roundMatches.push([matches[i], null]); // Bye
+                }
+            }
+
+            currentMatch = roundMatches.shift();
+            if (currentMatch[1] === null) {
+                matches = matches.filter(p => p !== currentMatch[0]);
+                matches.push(currentMatch[0]);
+                setupNextRound();
+                return;
+            }
+
+            currentQuestionIndex = 0;
+            currentPlayerIndex = 0;
+            currentMatch[0].score = 0;
+            currentMatch[1].score = 0;
+            startMatch();
+        }
+
+        function startMatch() {
+            matchTitle.textContent = `${currentMatch[0].player} در مقابل ${currentMatch[1].player}`;
+            player1NameElement.textContent = currentMatch[0].player;
+            player2NameElement.textContent = currentMatch[1].player;
+            player1ScoreElement.textContent = currentMatch[0].score;
+            player2ScoreElement.textContent = currentMatch[1].score;
+            nextQuestion();
+        }
+
+        function shuffleArray(array) {
+            return array.sort(() => Math.random() - 0.5);
+        }
+
+        function nextQuestion() {
+            if (currentQuestionIndex >= 5) { // Each match has 5 questions
+                endMatch();
+                return;
+            }
+
+            const question = questions[Math.floor(Math.random() * questions.length)];
+            questionElement.textContent = question.type === "vocab" ? 
+                `کلمه انگلیسی برای "${question.question}" چیست؟` : 
+                `جمله درست برای "${question.meaning}" کدام است؟`;
+            timeLeft = question.type === "vocab" ? 6 : 10; // 6 seconds for vocab, 10 seconds for grammar
+            optionsElement.innerHTML = '';
+            const shuffledOptions = shuffleArray([...question.options]);
+            shuffledOptions.forEach(option => {
+                const button = document.createElement('button');
+                button.textContent = option;
+                button.className = 'option-btn bg-indigo-100 text-indigo-800 px-4 py-2 rounded-lg hover:bg-indigo-200';
+                button.addEventListener('click', () => checkAnswer(option));
+                optionsElement.appendChild(button);
+            });
+
+            timerElement.textContent = timeLeft;
+            clearInterval(timerInterval);
+            timerInterval = setInterval(updateTimer, 1000);
+            messageElement.textContent = `نوبت: ${currentMatch[currentPlayerIndex].player}`;
+        }
+
+        function updateTimer() {
+            timeLeft--;
+            timerElement.textContent = timeLeft;
+            if (timeLeft <= 0) {
+                clearInterval(timerInterval);
+                const currentQuestion = questions.find(q => q.question === questionElement.textContent.split('"')[1] || q.meaning === questionElement.textContent.split('"')[1]);
+                messageElement.textContent = `زمان تمام شد! پاسخ درست: ${currentQuestion.answer}`;
+                messageElement.classList.add('text-red-600');
+                currentPlayerIndex = (currentPlayerIndex + 1) % 2;
+                currentQuestionIndex++;
+                nextQuestion();
+            }
+        }
+
+        function checkAnswer(selectedOption) {
+            const currentQuestion = questions.find(q => q.question === questionElement.textContent.split('"')[1] || q.meaning === questionElement.textContent.split('"')[1]);
+            if (selectedOption === currentQuestion.answer) {
+                currentMatch[currentPlayerIndex].score += 10;
+                if (currentPlayerIndex === 0) {
+                    player1ScoreElement.textContent = currentMatch[0].score;
+                } else {
+                    player2ScoreElement.textContent = currentMatch[1].score;
+                }
+                messageElement.textContent = 'آفرین! پاسخ درست بود!';
+                messageElement.classList.remove('text-red-600');
+                messageElement.classList.add('text-green-600');
+            } else {
+                messageElement.textContent = `اشتباه بود! پاسخ درست: ${currentQuestion.answer}`;
+                messageElement.classList.add('text-red-600');
+            }
+            clearInterval(timerInterval);
+            currentPlayerIndex = (currentPlayerIndex + 1) % 2;
+            currentQuestionIndex++;
+            setTimeout(nextQuestion, 1000);
+        }
+
+        function endMatch() {
+            const winner = currentMatch[0].score > currentMatch[1].score ? currentMatch[0] : currentMatch[1];
+            messageElement.textContent = `برنده این دور: ${winner.player} با امتیاز ${winner.score}`;
+            matches = matches.filter(p => p !== currentMatch[0] && p !== currentMatch[1]);
+            matches.push(winner);
+            setTimeout(setupNextRound, 1500);
+        }
+
+        playerCountInput.addEventListener('input', updatePlayerInputs);
+        startTournamentBtn.addEventListener('click', startTournament);
+        updatePlayerInputs();
+    </script>
+</body>
+</html>
